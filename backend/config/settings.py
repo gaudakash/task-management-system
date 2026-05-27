@@ -1,59 +1,42 @@
-"""
-Django Settings for Task Management System
-
-CONCEPT: settings.py is the central configuration for your Django project.
-It defines database connections, installed apps, middleware, and security settings.
-"""
-
 from pathlib import Path
 from datetime import timedelta
 import os
+import dj_database_url
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-# CONCEPT: BASE_DIR gives us the absolute path to our project root
-# so we can reference files/folders relative to it
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# CONCEPT: SECRET_KEY is used by Django for cryptographic signing
-# (sessions, tokens, password reset links). NEVER expose it publicly.
+# Secret key - will come from environment variable in production
 SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY',
     'django-insecure-change-this-in-production-abc123xyz'
 )
 
-# SECURITY WARNING: don't run with debug turned on in production!
-# CONCEPT: DEBUG=True shows detailed error pages. In production, set to False
-# to avoid exposing internal code/stack traces to users.
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
+# Debug - OFF in production
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# Allowed hosts - who can access your backend
+ALLOWED_HOSTS = os.environ.get(
+    'DJANGO_ALLOWED_HOSTS', 
+    'localhost,127.0.0.1'
+).split(',')
 
-# Application definition
-# CONCEPT: INSTALLED_APPS tells Django which modules to load.
-# Order matters — Django processes them top to bottom.
 INSTALLED_APPS = [
-    'django.contrib.admin',        # Built-in admin panel
-    'django.contrib.auth',         # Authentication framework
-    'django.contrib.contenttypes', # Content type system (used by auth)
-    'django.contrib.sessions',     # Session framework
-    'django.contrib.messages',     # Messaging framework
-    'django.contrib.staticfiles',  # Static file handling
-
-    # Third-party apps
-    'rest_framework',              # Django REST Framework for building APIs
-    'corsheaders',                 # Cross-Origin Resource Sharing headers
-
-    # Our apps
-    'accounts',                    # User authentication & registration
-    'tasks',                       # Task management (core feature)
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'rest_framework',
+    'corsheaders',
+    'accounts',
+    'tasks',
 ]
 
-# CONCEPT: Middleware is like a pipeline — every request/response passes through
-# each middleware in order. Think of it as "filters" for HTTP traffic.
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',          # Must be high up - handles CORS
+    'whitenoise.middleware.WhiteNoiseMiddleware',     # NEW - serves static files in production
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -82,20 +65,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database
-# CONCEPT: Django ORM abstracts database operations. You write Python classes (models)
-# and Django translates them to SQL tables. We use SQLite for development (file-based,
-# no setup needed) and can switch to PostgreSQL for production.
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Database - uses PostgreSQL in production, SQLite locally
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL)
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
-# Password validation
-# CONCEPT: These validators enforce password strength rules during registration.
-# They check minimum length, similarity to username, common passwords, and numeric-only.
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -103,26 +86,19 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internationalization
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Asia/Kolkata'  # IST timezone
+TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
 
 # Static files
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ============================================================
-# Django REST Framework Configuration
-# ============================================================
-# CONCEPT: DRF (Django REST Framework) extends Django to easily build REST APIs.
-# Here we configure:
-# 1. DEFAULT_AUTHENTICATION_CLASSES: How users prove their identity (JWT tokens)
-# 2. DEFAULT_PERMISSION_CLASSES: Default access rules (must be authenticated)
+# REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -132,40 +108,19 @@ REST_FRAMEWORK = {
     ),
 }
 
-# ============================================================
-# JWT Configuration
-# ============================================================
-# CONCEPT: JWT (JSON Web Token) is a stateless authentication method.
-# Instead of storing sessions on the server, we give the client a signed token.
-#
-# How it works:
-# 1. User logs in with username/password
-# 2. Server validates and returns two tokens:
-#    - ACCESS token (short-lived, 1 day) — used for API requests
-#    - REFRESH token (long-lived, 7 days) — used to get a new access token
-# 3. Client sends access token in every request header: "Authorization: Bearer <token>"
-# 4. Server decodes the token to identify the user (no database lookup needed!)
+# JWT
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,              # Issue new refresh token on refresh
+    'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': False,
-    'AUTH_HEADER_TYPES': ('Bearer',),            # Token prefix in headers
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# ============================================================
-# CORS Configuration
-# ============================================================
-# CONCEPT: CORS (Cross-Origin Resource Sharing) is a browser security feature.
-# By default, browsers block requests from one domain to another.
-# Since our React frontend (port 5173) talks to Django backend (port 8000),
-# we need to explicitly allow this "cross-origin" communication.
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",      # Vite dev server
-    "http://localhost:3000",      # Alternative React port
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:3000",
-]
+# CORS - which websites can call your API
+CORS_ALLOWED_ORIGINS = os.environ.get(
+    'CORS_ALLOWED_ORIGINS',
+    'http://localhost:5173,http://localhost:3000'
+).split(',')
 
-# Also allow these headers in CORS requests
 CORS_ALLOW_CREDENTIALS = True
