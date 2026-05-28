@@ -1,45 +1,100 @@
-# 📋 Task Management System
+# Task Management System
 
-A full-stack task management application with JWT authentication, 
-role-based permissions, and support for personal and assigned tasks.
+A full-stack Task Management System built for the Full Stack Developer Assignment.  
+The application allows users to manage personal tasks, assign tasks to other users, and enforce role-based permissions using JWT authentication.
 
-## 🖥 Live Demo
+## Live Demo
 
-- **Frontend:** [Your Vercel URL here]
-- **Backend API:** [Your Railway URL here]
+- **Frontend:** https://task-management-system-inky.vercel.app/
+- **Backend :** web-production-7c5de.up.railway.app
+- **GitHub Repository:** https://github.com/gaudakash/task-management-system
 
-## 🛠 Tech Stack
+---
 
-| Layer      | Technology                          |
-|------------|-------------------------------------|
-| Backend    | Python 3.x, Django 4.2, DRF 3.14   |
-| Auth       | JWT (djangorestframework-simplejwt) |
-| Frontend   | React 18 (Vite)                     |
-| Database   | SQLite (dev) / PostgreSQL (prod)    |
-| Styling    | Custom CSS                          |
-| Deployment | Railway (backend) + Vercel (frontend)|
+## Features
 
-## 👤 Sample User Credentials
+### Authentication
+- User Registration
+- User Login
+- JWT-based authentication
+- Secure password hashing
+- Protected routes
 
-| Username    | Password    |
-|-------------|-------------|
-| Shreyavaidya    | Shreya@12345  |
-| DevPy    | Dev@56789  |
-| john_doe    | Test@12345  |
-| jane_smith  | Test@12345  |
+### Task Management
+- Create tasks
+- View tasks
+- Update tasks
+- Delete tasks
 
-## 🚀 Local Setup Instructions
+### Task Types
+#### Personal Tasks
+- Created by a user
+- Visible only to the creator
+- Creator can edit all fields
 
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- npm
+#### Assigned Tasks
+- A user can assign a task to another user
+- Visible to both assigner and assignee
 
-### Backend Setup
+### Role-Based Permissions
+#### Assignee
+- Can only update the task status
+- Cannot modify title, description, priority, or due date
+
+#### Assigner
+- Can view the task and its progress
+- Can update the due date
+- Cannot update task status
+
+### UI/UX
+- Clean and usable interface
+- Loading states
+- Empty states
+- Error handling
+- Responsive layout
+
+---
+
+## Tech Stack
+
+### Backend
+- Python
+- Django
+- Django REST Framework
+- Simple JWT
+- PostgreSQL
+- Gunicorn
+- Railway
+
+### Frontend
+- React
+- Vite
+- Axios
+- React Router DOM
+- Vercel
+
+---
+
+## Project Structure
+
 ```bash
-cd backend
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py shell
+task-management-system/
+│
+├── backend/
+│   ├── accounts/
+│   ├── tasks/
+│   ├── config/
+│   ├── manage.py
+│   └── requirements.txt
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── pages/
+│   │   └── services/
+│   ├── public/
+│   ├── package.json
+│   └── vercel.json
+│
+└── README.md
